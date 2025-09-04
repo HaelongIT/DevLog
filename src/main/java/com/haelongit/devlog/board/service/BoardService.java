@@ -1,10 +1,13 @@
 package com.haelongit.devlog.board.service;
 
+import com.haelongit.devlog.board.dto.request.BoardSaveRequestDto;
+import com.haelongit.devlog.board.dto.response.BoardResponseDto;
 import com.haelongit.devlog.board.entity.Board;
 import com.haelongit.devlog.board.repository.BoardRepsitory;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,10 +17,19 @@ public class BoardService {
 
     private final BoardRepsitory boardRepository;
 
-    /**
-     * 모든 게시글을 조회하는 메서드
-     * @return 게시글 목록
-     */
+    @Transactional
+    public Long save(BoardSaveRequestDto requestDto) {
+        return boardRepository.save(requestDto.toEntity()).getId();
+    }
+
+    @Transactional(readOnly = true)
+    public BoardResponseDto findById(Long id) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id=" + id));
+        return new BoardResponseDto(board);
+    }
+
+    @Transactional(readOnly = true)
     public List<Board> findAll() {
         return boardRepository.findAll();
     }

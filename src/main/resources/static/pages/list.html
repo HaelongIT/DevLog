@@ -1,0 +1,67 @@
+<div class="row">
+    <div class="col-lg-12">
+        <!-- 페이지 제목과 글쓰기 버튼 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">게시글 목록</h1>
+            <!-- 글쓰기 페이지로 이동하는 링크 (해시 사용) -->
+            <a href="#/write" class="btn btn-primary">
+                <i class="bi bi-pencil-fill"></i> 글쓰기
+            </a>
+        </div>
+
+        <!-- 게시글 목록 테이블 -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-light text-center">
+                    <tr>
+                        <th scope="col" style="width: 10%;">#</th>
+                        <th scope="col" style="width: 70%;">제목</th>
+                        <th scope="col" style="width: 20%;">작성자</th>
+                    </tr>
+                    </thead>
+                    <tbody id="board-list" class="text-center">
+                    <!-- 데이터가 여기에 동적으로 추가됩니다 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 이 페이지 조각에만 필요한 스크립트 -->
+<script>
+    // 페이지가 로드될 때 API를 호출하여 게시글 목록을 가져옵니다.
+    function loadBoards() {
+        $.ajax({
+            url: '/api/boards',
+            type: 'GET',
+            success: function(data) {
+                const boardListTbody = $('#board-list');
+                boardListTbody.empty(); // 기존 목록 초기화
+
+                if (data.length === 0) {
+                    boardListTbody.append('<tr><td colspan="3" class="text-center py-5">게시글이 없습니다.</td></tr>');
+                    return;
+                }
+
+                data.forEach(board => {
+                    // <tr> 요소에 onclick 이벤트를 추가하여 해시를 변경합니다.
+                    const row = $(`<tr onclick="window.location.hash = '#/board/${board.id}'"></tr>`);
+                    row.css('cursor', 'pointer');
+                    row.append(`<th scope="row">${board.id}</th>`);
+                    row.append(`<td class="text-start">${board.title}</td>`);
+                    row.append(`<td>${board.author}</td>`);
+                    boardListTbody.append(row);
+                });
+            },
+            error: function(error) {
+                console.error('Error:', error);
+                $('#board-list').html(`<td colspan="3" class="text-center text-danger py-5">데이터 로딩 실패</td>`);
+            }
+        });
+    }
+    // 이 스크립트가 로드되는 즉시 함수 실행
+    loadBoards();
+</script>
+
