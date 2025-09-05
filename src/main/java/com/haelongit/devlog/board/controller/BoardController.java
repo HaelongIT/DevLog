@@ -1,6 +1,7 @@
 package com.haelongit.devlog.board.controller;
 
 import com.haelongit.devlog.board.dto.request.BoardSaveRequestDto;
+import com.haelongit.devlog.board.dto.request.BoardUpdateRequestDto;
 import com.haelongit.devlog.board.dto.response.BoardResponseDto;
 import com.haelongit.devlog.board.entity.Board;
 import com.haelongit.devlog.board.service.BoardService;
@@ -14,6 +15,11 @@ import java.util.List;
 public class BoardController {
 
     private final BoardService boardService;
+
+    @PutMapping("/api/boards/{id}")
+    public Long update(@PathVariable Long id, @RequestBody BoardUpdateRequestDto requestDto) {
+        return boardService.update(id, requestDto);
+    }
 
     @PostMapping("/api/boards")
     public Long save(@RequestBody BoardSaveRequestDto requestDto) {

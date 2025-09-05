@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +12,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Board {
 
     @Id // 이 필드가 테이블의 기본 키(Primary Key)임을 나타냅니다.
@@ -29,5 +30,14 @@ public class Board {
         this.title = title;
         this.content = content;
         this.author = author;
+    }
+
+    //== 비즈니스 로직 ==//
+    /**
+     * 게시글 정보를 수정합니다.
+     */
+    public void update(String title, String content) {
+        this.title = title;
+        this.content = content;
     }
 }

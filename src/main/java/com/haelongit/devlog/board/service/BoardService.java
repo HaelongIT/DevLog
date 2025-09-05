@@ -1,6 +1,7 @@
 package com.haelongit.devlog.board.service;
 
 import com.haelongit.devlog.board.dto.request.BoardSaveRequestDto;
+import com.haelongit.devlog.board.dto.request.BoardUpdateRequestDto;
 import com.haelongit.devlog.board.dto.response.BoardResponseDto;
 import com.haelongit.devlog.board.entity.Board;
 import com.haelongit.devlog.board.repository.BoardRepsitory;
@@ -16,6 +17,16 @@ import java.util.List;
 public class BoardService {
 
     private final BoardRepsitory boardRepository;
+
+    @Transactional
+    public Long update(Long id, BoardUpdateRequestDto requestDto) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id=" + id));
+
+        board.update(requestDto.getTitle(), requestDto.getContent());
+
+        return id;
+    }
 
     @Transactional
     public Long save(BoardSaveRequestDto requestDto) {

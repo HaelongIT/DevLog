@@ -12,8 +12,9 @@
             </div>
             <div class="card-footer d-flex justify-content-end">
                 <a href="#/" class="btn btn-secondary me-2">목록으로</a>
-                <button class="btn btn-warning me-2" disabled>수정</button> <!-- TODO: 수정 기능 -->
-                <button class="btn btn-danger" disabled>삭제</button> <!-- TODO: 삭제 기능 -->
+                <!-- 수정 버튼 활성화 및 링크 추가 -->
+                <button id="edit-btn" class="btn btn-warning me-2">수정</button>
+                <button class="btn btn-danger" disabled>삭제</button>
             </div>
         </div>
     </div>
@@ -38,6 +39,9 @@
                 $('#board-title').text(data.title);
                 $('#board-author').text(`작성자: ${data.author}`);
                 $('#board-content').text(data.content);
+                $('#edit-btn').on('click', function() {
+                    window.location.hash = `#/edit/${data.id}`;
+                });
             },
             error: function(err) {
                 alert(err.responseJSON?.message || '게시글을 불러오는데 실패했습니다.');

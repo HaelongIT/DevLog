@@ -1,0 +1,85 @@
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="card-title h3 mb-4">게시글 수정</h1>
+                <form id="edit-form">
+                    <div class="mb-3">
+                        <label for="author" class="form-label">작성자</label>
+                        <input type="text" class="form-control" id="author" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="title" class="form-label">제목</label>
+                        <input type="text" class="form-control" id="title" placeholder="제목을 입력하세요" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label">내용</label>
+                        <textarea class="form-control" id="content" rows="10" placeholder="내용을 입력하세요" required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" id="cancel-btn" class="btn btn-secondary me-2">취소</button>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // URL에서 게시글 ID를 추출
+        const pathParts = window.location.hash.split('/');
+        const boardId = pathParts[pathParts.length - 1];
+
+        if (!boardId || isNaN(boardId)) {
+            alert('유효하지 않은 게시글 ID입니다.');
+            window.location.hash = '#/';
+            return;
+        }
+
+        // 기존 게시글 정보를 불러와 폼에 채우기
+        $.ajax({
+            url: `/api/boards/${boardId}`,
+            type: 'GET',
+            success: function(data) {
+                $('#author').val(data.author);
+                $('#title').val(data.title);
+                $('#content').val(data.content);
+            },
+            error: function() {
+                alert('게시글 정보를 불러오는데 실패했습니다.');
+                window.location.hash = `#/board/${boardId}`;
+            }
+        });
+
+        // 폼 제출 이벤트 처리
+        $('#edit-form').on('submit', function(event) {
+            event.preventDefault();
+
+            const updatedData = {
+                title: $('#title').val(),
+                content: $('#content').val()
+            };
+
+            $.ajax({
+                url: `/api/boards/${boardId}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(updatedData),
+                success: function() {
+                    alert('게시글이 성공적으로 수정되었습니다.');
+                    window.location.hash = `#/board/${boardId}`; // 수정 후 상세 페이지로 이동
+                },
+                error: function() {
+                    alert('게시글 수정에 실패했습니다.');
+                }
+            });
+        });
+
+        // 취소 버튼 이벤트 처리
+        $('#cancel-btn').on('click', function() {
+            window.location.hash = `#/board/${boardId}`;
+        });
+    })();
+</script>

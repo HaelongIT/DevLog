@@ -50,12 +50,18 @@
         const path = window.location.hash.substring(1) || '/';
 
         // 상세 보기 경로를 위한 정규식 체크 (예: /board/1, /board/12)
+        // 정규식 정의
         const detailPageRegex = /^\/board\/(\d+)$/;
-        const match = path.match(detailPageRegex);
+        const editPageRegex = /^\/edit\/(\d+)$/; // 수정 페이지 정규식 추가
 
-        if (match) {
+        const detailMatch = path.match(detailPageRegex);
+        const editMatch = path.match(editPageRegex); // 수정 페이지 매칭
+
+        if (detailMatch) {
             // URL이 /board/숫자 형태와 일치하면
             loadPage('/pages/detail.html');
+        } else if (editMatch) {     // else if로 수정 페이지 라우트 추가
+            loadPage('/pages/edit.html');
         } else {
             // 기존 switch 문
             switch (path) {
