@@ -41,4 +41,11 @@ public class PaymentController {
         List<Payment> payments = paymentService.getAllPayments();
         return ResponseEntity.ok(payments);
     }
+
+    // 결제 취소
+    @GetMapping("/cancle/{uid}")
+    public ResponseEntity<String> canclePayment(@PathVariable("uid")String uid) {
+        paymentService.canclePayment(uid);
+        return ResponseEntity.ok("Payment cancle processed successfully.");
+    }
 }

@@ -2,6 +2,7 @@ package com.haelongit.devlog.payment.service;
 
 import com.haelongit.devlog.payment.entity.Payment;
 import com.haelongit.devlog.payment.repository.PaymentRepository;
+import com.haelongit.devlog.payment.util.PaymentClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +14,12 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
 
+    private final PaymentClient paymentClient;
+
     @Autowired
-    public PaymentService(PaymentRepository paymentRepository) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentClient paymentClient) {
         this.paymentRepository = paymentRepository;
+        this.paymentClient = paymentClient;
     }
 
     /**
@@ -36,5 +40,23 @@ public class PaymentService {
      */
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
+    }
+
+    /**
+     * 결제 내역 삭제
+     *
+     * @param uid 포트원 거래고유번호
+     */
+    @Transactional
+    public void canclePayment(String uid) {
+        // 외부 API로 결제 취소 요청
+        paymentClient.cancelPayment(uid);
+
+        // impUid로 Payment 엔티티 조회
+        Payment payment = paymentRepository.findByImpUid(uid)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found with impUid: " + uid));
+
+        // status 필드를 "cancel"로 변경
+        payment.setStatus("cancel");
     }
 }
