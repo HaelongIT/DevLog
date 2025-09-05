@@ -16,6 +16,12 @@ public class BoardController {
 
     private final BoardService boardService;
 
+    @DeleteMapping("/api/boards/{id}")
+    public Long delete(@PathVariable Long id) {
+        boardService.delete(id);
+        return id;
+    }
+
     @PutMapping("/api/boards/{id}")
     public Long update(@PathVariable Long id, @RequestBody BoardUpdateRequestDto requestDto) {
         return boardService.update(id, requestDto);
