@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class PaymentService {
 
@@ -25,5 +27,14 @@ public class PaymentService {
     @Transactional
     public Payment savePayment(Payment payment) {
         return paymentRepository.save(payment);
+    }
+
+    /**
+     * 모든 결제 내역 조회
+     *
+     * @return 모든 Payment 엔티티 리스트
+     */
+    public List<Payment> getAllPayments() {
+        return paymentRepository.findAll();
     }
 }
