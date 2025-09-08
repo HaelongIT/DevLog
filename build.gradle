@@ -42,11 +42,12 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework:spring-aspects'
 
+    // lock을 활용한 중복 실행 방지 위해 추가
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0' // JDBC 쓰는 경우
+
 //    implementation 'org.springframework.retry:spring-retry'
 //    implementation 'org.springframework.boot:spring-boot-starter-aop'
-
-//    implementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
-//    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0' // JDBC 쓰는 경우
 }
 
 tasks.named('test') {

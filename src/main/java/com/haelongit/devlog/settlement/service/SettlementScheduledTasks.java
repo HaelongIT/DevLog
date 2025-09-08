@@ -5,6 +5,7 @@ import com.haelongit.devlog.payment.repository.PaymentRepository;
 import com.haelongit.devlog.settlement.entity.Settlement;
 import com.haelongit.devlog.settlement.reposiitory.SettlementRepository;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,8 @@ public class SettlementScheduledTasks {
 
     // 1분마다 실행(어떤 시점에 스케줄링을 돌릴건지) - 개발하면서 집계 기능 확인을 위해, 1분 단위로 설정
     @Scheduled(cron = "0 * * * * ?")
+//    @Scheduled(cron = "0 35 16 * * ?")      // 특정 시간에 스케줄링 사용
+    @SchedulerLock(name = "ScheduledTask_run")      // 스케줄링 메서드에 lock 설정
     public void dailySettlement() {
         // 스케줄링 로직 추가
         // 어제의 날짜를 가져옴
