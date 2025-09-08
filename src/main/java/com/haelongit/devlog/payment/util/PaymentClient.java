@@ -75,16 +75,15 @@ public class PaymentClient {
         String accessToken = ((LinkedHashMap)getAccessToken().get("response")).get("access_token").toString();
 
         String url = BASE_URL + PortOneRequestUrl.CANCEL_PAYMENT_URL.getUrl();
-        String requestBody = String.format("{\"imp_uid\": \"%s\"}",impUid);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
+        try {
+            // Construct the request body for payment cancellation
+            String requestBody = String.format("{\"imp_uid\": \"%s\"}",impUid);
 
-        if(true) {
-            // 재처리 확인을 위해, 강제로 예외 발생시킴
-            throw new RestClientException("Forced RestClientException for testing");
-        }else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
             // Send POST request
             return restClient
                     .post()
@@ -93,6 +92,8 @@ public class PaymentClient {
                     .body(requestBody)
                     .retrieve()
                     .body(String.class);
+        } catch (RestClientException e) {
+            throw new RestClientException("Fail to cancel payment", e);
         }
     }
 
