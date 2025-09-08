@@ -73,10 +73,21 @@ public class SettlementScheduledTasks {
     }
 
     private void processSettlements(Map<Long, BigDecimal> settlementMap, LocalDate paymentDate) {
-        settlementMap.entrySet().parallelStream()
-                .forEach(entry -> {
-                    Settlement settlement = Settlement.create(entry.getKey(), entry.getValue(), paymentDate);
-                    settlementRepository.save(settlement);
-                });
+        // 데드락 방지를 위해, ForkJoinPool 사용 - 별도의 독립적인 스레드 풀 사용
+        ForkJoinPool customForkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+
+        try {
+            customForkJoinPool.submit(() ->
+                    settlementMap.entrySet().parallelStream()
+                            .forEach(entry -> {
+                                Settlement settlement = Settlement.create(entry.getKey(), entry.getValue(), paymentDate);
+                                settlementRepository.save(settlement);
+                            })
+            ).get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            customForkJoinPool.shutdown();
+        }
     }
 }
