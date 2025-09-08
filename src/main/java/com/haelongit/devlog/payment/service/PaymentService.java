@@ -50,7 +50,11 @@ public class PaymentService {
     @Transactional
     public void canclePayment(String uid) {
         // 외부 API로 결제 취소 요청
-        paymentClient.cancelPayment(uid);
+        String result = paymentClient.cancelPayment(uid);
+
+        if (result.contains("ERROR")) {
+            throw new RuntimeException("Payment cancellation failed during recovery process.");
+        }
 
         // impUid로 Payment 엔티티 조회
         Payment payment = paymentRepository.findByImpUid(uid)

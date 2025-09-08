@@ -38,12 +38,13 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
+    // 재처리를 위한 의존성 추가
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework:spring-aspects'
+
 //    implementation 'org.springframework.retry:spring-retry'
 //    implementation 'org.springframework.boot:spring-boot-starter-aop'
-//
-//    implementation 'org.springframework.retry:spring-retry'
-//    implementation 'org.springframework:spring-aspects'
-//
+
 //    implementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
 //    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0' // JDBC 쓰는 경우
 }
