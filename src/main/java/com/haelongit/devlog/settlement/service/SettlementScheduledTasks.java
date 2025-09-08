@@ -51,7 +51,11 @@ public class SettlementScheduledTasks {
         // 해당 기간 동안의 결제 내역 조회 및 집계
         Map<Long, BigDecimal> settlementMap = getSettlementMap(startDate, endDate);
 
+        long beforeTime1 = System.currentTimeMillis();
         processSettlements(settlementMap, yesterday);
+        long afterTime1 = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
+        long diffTime1 = afterTime1 - beforeTime1; // 두 개의 실행 시간
+        log.info("실행 시간(ms): " + diffTime1); // 세컨드(초 단위 변환)
     }
 
     private Map<Long, BigDecimal> getSettlementMap(LocalDateTime startDate, LocalDateTime endDate) {
@@ -69,7 +73,7 @@ public class SettlementScheduledTasks {
     }
 
     private void processSettlements(Map<Long, BigDecimal> settlementMap, LocalDate paymentDate) {
-        settlementMap.entrySet().stream()
+        settlementMap.entrySet().parallelStream()
                 .forEach(entry -> {
                     Settlement settlement = Settlement.create(entry.getKey(), entry.getValue(), paymentDate);
                     settlementRepository.save(settlement);
