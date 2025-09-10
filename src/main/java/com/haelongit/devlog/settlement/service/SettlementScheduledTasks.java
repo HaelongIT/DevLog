@@ -7,10 +7,14 @@ import com.haelongit.devlog.settlement.reposiitory.SettlementRepository;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -24,15 +28,15 @@ import java.util.stream.Collectors;
 public class SettlementScheduledTasks {
 
     public static final String PAYMENT_COMPLETED = "paid";
-
     private final PaymentRepository paymentRepository;
-
     private final SettlementRepository settlementRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public SettlementScheduledTasks(PaymentRepository paymentRepository, SettlementRepository settlementRepository) {
+    public SettlementScheduledTasks(PaymentRepository paymentRepository, SettlementRepository settlementRepository, JdbcTemplate jdbcTemplate) {
         this.paymentRepository = paymentRepository;
         this.settlementRepository = settlementRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     // 1분마다 실행(어떤 시점에 스케줄링을 돌릴건지) - 개발하면서 집계 기능 확인을 위해, 1분 단위로 설정
@@ -52,7 +56,7 @@ public class SettlementScheduledTasks {
         Map<Long, BigDecimal> settlementMap = getSettlementMap(startDate, endDate);
 
         long beforeTime1 = System.currentTimeMillis();
-        processSettlements(settlementMap, yesterday);
+        bulkProcessSettlements(settlementMap, yesterday);   // 결제 내역 집계하기
         long afterTime1 = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
         long diffTime1 = afterTime1 - beforeTime1; // 두 개의 실행 시간
         log.info("실행 시간(ms): " + diffTime1); // 세컨드(초 단위 변환)
@@ -73,6 +77,14 @@ public class SettlementScheduledTasks {
     }
 
     private void processSettlements(Map<Long, BigDecimal> settlementMap, LocalDate paymentDate) {
+        // 1. 개별 처리를 사용해서, 집계를 하는 경우, 실행 시간(ms) : 1702
+//        settlementMap.entrySet().stream()
+//                .forEach(entry -> {
+//                    Settlement settlement = Settlement.create(entry.getKey(), entry.getValue(), paymentDate);
+//                    settlementRepository.save(settlement);
+//                });
+
+        // 2. 병렬 처리를 사용해서, 집계 성능 개선한 경우, 실행 시간(ms) : 1026
         // 데드락 방지를 위해, ForkJoinPool 사용 - 별도의 독립적인 스레드 풀 사용
         ForkJoinPool customForkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
 
@@ -89,5 +101,28 @@ public class SettlementScheduledTasks {
         } finally {
             customForkJoinPool.shutdown();
         }
+    }
+
+    // 3. burk Insert 방식을 사용해서 집계 성능 개선한 경우, 실행 시간(ms) : 315
+    private void bulkProcessSettlements(Map<Long, BigDecimal> settlementMap, LocalDate paymentDate) {
+        String sql = "INSERT INTO settlements (partner_id, total_amount, payment_date) VALUES (?, ?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                Long partnerId = (Long) settlementMap.keySet().toArray()[i];
+                BigDecimal amount = settlementMap.get(partnerId);
+
+                ps.setLong(1, partnerId);
+                ps.setBigDecimal(2, amount);
+                ps.setObject(3, paymentDate);
+            }
+
+            @Override
+            public int getBatchSize() {
+//                return settlementMap.size();
+                return 1000;    // 데이터가 늘어날 것을 대비해, 적당한 사이즈로 변경
+            }
+        });
     }
 }
