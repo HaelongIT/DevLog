@@ -7,17 +7,21 @@ import com.haelongit.devlog.settlement.reposiitory.SettlementRepository;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.sql.BatchUpdateException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
@@ -105,24 +109,77 @@ public class SettlementScheduledTasks {
 
     // 3. burk Insert 방식을 사용해서 집계 성능 개선한 경우, 실행 시간(ms) : 315
     private void bulkProcessSettlements(Map<Long, BigDecimal> settlementMap, LocalDate paymentDate) {
-        String sql = "INSERT INTO settlements (partner_id, total_amount, payment_date) VALUES (?, ?, ?)";
-
-        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
-                Long partnerId = (Long) settlementMap.keySet().toArray()[i];
-                BigDecimal amount = settlementMap.get(partnerId);
-
-                ps.setLong(1, partnerId);
-                ps.setBigDecimal(2, amount);
-                ps.setObject(3, paymentDate);
-            }
-
-            @Override
-            public int getBatchSize() {
+        // 1번 방식
+//        String sql = "INSERT INTO settlements (partner_id, total_amount, payment_date) VALUES (?, ?, ?)";
+//
+//        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+//            @Override
+//            public void setValues(PreparedStatement ps, int i) throws SQLException {
+//                Long partnerId = (Long) settlementMap.keySet().toArray()[i];
+//                BigDecimal amount = settlementMap.get(partnerId);
+//
+//                ps.setLong(1, partnerId);
+//                ps.setBigDecimal(2, amount);
+//                ps.setObject(3, paymentDate);
+//            }
+//
+//            @Override
+//            public int getBatchSize() {
 //                return settlementMap.size();
-                return 1000;    // 데이터가 늘어날 것을 대비해, 적당한 사이즈로 변경
+//            }
+//        });
+
+        // 2번 방식 : 1번 + 예외 처리
+        String sql = "INSERT INTO settlements (partner_id, total_amount, payment_date) VALUES (?, ?, ?)";
+        List<Long> failedPartnerIds = new ArrayList<>(); // 실패한 partnerId를 저장할 리스트 선언
+
+        try {
+            jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    Long partnerId = (Long) settlementMap.keySet().toArray()[i];
+                    BigDecimal amount = settlementMap.get(partnerId);
+
+                    ps.setLong(1, partnerId);
+                    ps.setBigDecimal(2, amount);
+                    ps.setObject(3, paymentDate);
+                }
+
+                @Override
+                public int getBatchSize() {
+                return settlementMap.size();
+                }
+            });
+        } catch (DataAccessException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof BatchUpdateException) {
+                BatchUpdateException batchEx = (BatchUpdateException) cause;
+                int[] updateCounts = batchEx.getUpdateCounts();
+
+                // 실패한 인덱스만 추출
+                int index = 0;
+                for (Map.Entry<Long, BigDecimal> entry : settlementMap.entrySet()) {
+                    if (updateCounts[index] == Statement.EXECUTE_FAILED) { // 실패한 경우
+                        failedPartnerIds.add(entry.getKey());
+                    }
+                    index++;
+                }
+
+                // 로그 또는 추가적인 후속 처리
+                notifyError(failedPartnerIds);
             }
-        });
+            throw e; // 실패 예외를 다시 던져 호출자에게 알림
+        }
+    }
+
+    private void notifyError(List<Long> failedPartnerIds) {
+        // 에러 로그 기록
+        log.error("Failed to process the following partner IDs: {}", failedPartnerIds);
+
+        // 상세한 로그 메시지 추가
+        failedPartnerIds.forEach(id -> log.debug("Failed partner ID: {}", id));
+
+        // 담당자 알림(email ,webhook)
+        // 정산 실패 케이스를 DB에 저장
     }
 }
