@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:8080/api/boards";
 
-export default function BoardList({ navigateTo }) {
+export default function BoardList() {
   const [boards, setBoards] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch(API_URL)
@@ -16,7 +18,7 @@ export default function BoardList({ navigateTo }) {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h2">게시글 목록</h1>
-        <button onClick={() => navigateTo("write")} className="btn btn-primary">
+        <button onClick={() => navigate("/write")} className="btn btn-primary">
           <i className="bi bi-pencil-fill me-2"></i>글쓰기
         </button>
       </div>
@@ -39,7 +41,7 @@ export default function BoardList({ navigateTo }) {
             {boards.map((board) => (
               <tr
                 key={board.id}
-                onClick={() => navigateTo("detail", board.id)}
+                onClick={() => navigate(`/board/${board.id}`)}
                 style={{ cursor: "pointer" }}
               >
                 <th scope="row">{board.id}</th>

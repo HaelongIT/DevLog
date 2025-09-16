@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:8080/api/boards";
 
-export default function BoardDetail({ boardId, navigateTo }) {
+export default function BoardDetail() {
   const [board, setBoard] = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (boardId) {
-      fetch(`${API_URL}/${boardId}`)
+    if (id) {
+      fetch(`${API_URL}/${id}`)
         .then((response) => response.json())
         .then((data) => setBoard(data))
         .catch((error) => console.error("Error fetching board detail:", error));
     }
-  }, [boardId]);
+  }, [id]);
 
   const handleDelete = () => {
     if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-      fetch(`${API_URL}/${boardId}`, { method: "DELETE" })
+      fetch(`${API_URL}/${id}`, { method: "DELETE" })
         .then((response) => {
           if (response.ok) {
             alert("게시글이 삭제되었습니다.");
-            navigateTo("list");
+            navigate("/");
           } else {
             alert("게시글 삭제에 실패했습니다.");
           }
@@ -44,13 +47,13 @@ export default function BoardDetail({ boardId, navigateTo }) {
       </div>
       <div className="card-footer d-flex justify-content-end">
         <button
-          onClick={() => navigateTo("list")}
+          onClick={() => navigate("/")}
           className="btn btn-secondary me-2"
         >
           목록으로
         </button>
         <button
-          onClick={() => navigateTo("edit", board.id)}
+          onClick={() => navigate(`/edit/${id}`)}
           className="btn btn-warning me-2"
         >
           수정
