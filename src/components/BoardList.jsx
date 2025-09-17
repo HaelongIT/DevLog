@@ -1,38 +1,43 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:8080/api/boards";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function BoardList() {
   const [boards, setBoards] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(API_URL)
-      .then((response) => response.json())
-      .then((data) => setBoards(data))
-      .catch((error) => console.error("Error fetching boards:", error));
+    const fetchBoards = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/boards");
+        if (!response.ok) throw new Error("데이터를 불러오는데 실패했습니다.");
+        const data = await response.json();
+        setBoards(data);
+      } catch (error) {
+        console.error("게시글 목록 로딩 실패:", error);
+      }
+    };
+    fetchBoards();
   }, []);
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h2">게시글 목록</h1>
-        <button onClick={() => navigate("/write")} className="btn btn-primary">
-          <i className="bi bi-pencil-fill me-2"></i>글쓰기
-        </button>
+    <div className="card">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <span>게시글 목록</span>
+        <Link to="/write" className="btn btn-primary btn-sm">
+          <i className="bi bi-pencil-square me-1"></i>글쓰기
+        </Link>
       </div>
-      <div className="table-responsive">
+      <div className="card-body">
         <table className="table table-hover">
           <thead className="table-light">
             <tr>
               <th scope="col" style={{ width: "10%" }}>
                 #
               </th>
-              <th scope="col" style={{ width: "70%" }}>
+              <th scope="col" style={{ width: "60%" }}>
                 제목
               </th>
-              <th scope="col" style={{ width: "20%" }}>
+              <th scope="col" style={{ width: "30%" }}>
                 작성자
               </th>
             </tr>

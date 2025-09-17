@@ -1,96 +1,96 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:8080/api/boards";
-
 export default function BoardForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const isEditMode = id != null;
-  const [form, setForm] = useState({ title: "", content: "", author: "" });
+  const isEditMode = Boolean(id);
+  const [board, setBoard] = useState({ title: "", content: "", author: "" });
 
   useEffect(() => {
     if (isEditMode) {
-      fetch(`${API_URL}/${id}`)
-        .then((response) => response.json())
-        .then((data) => setForm(data));
-    } else {
-      setForm({ title: "", content: "", author: "" });
+      const fetchBoard = async () => {
+        try {
+          const response = await fetch(
+            `http://localhost:8080/api/boards/${id}`
+          );
+          if (!response.ok)
+            throw new Error("게시글 정보를 가져오는데 실패했습니다.");
+          const data = await response.json();
+          setBoard({
+            title: data.title,
+            content: data.content,
+            author: data.author,
+          });
+        } catch (error) {
+          console.error(error);
+          alert(error.message);
+          navigate("/boards");
+        }
+      };
+      fetchBoard();
     }
-  }, [isEditMode, id]);
+  }, [id, isEditMode, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prevForm) => ({ ...prevForm, [name]: value }));
+    setBoard((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isEditMode ? `${API_URL}/${id}` : API_URL;
+    const url = isEditMode
+      ? `http://localhost:8080/api/boards/${id}`
+      : "http://localhost:8080/api/boards";
     const method = isEditMode ? "PUT" : "POST";
 
-    fetch(url, {
-      method: method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Network response was not ok");
-        // 생성(POST) 시에는 서버로부터 응답 본문을 받아야 합니다.
-        if (!isEditMode) {
-          return response.json();
-        }
-        // 수정(PUT) 시에는 응답 본문이 필요 없습니다.
-        return null;
-      })
-      .then((savedBoard) => {
-        // 이 변수는 생성 모드일 때만 유효한 값을 가집니다.
-        alert(`게시글이 성공적으로 ${isEditMode ? "수정" : "등록"}되었습니다.`);
-
-        // 수정 모드일 때는 기존 id를, 생성 모드일 때는 서버 응답 객체의 id를 사용합니다.
-        // Optional Chaining (?.)을 사용하여 savedBoard가 null이거나 id가 없을 때 오류를 방지합니다.
-        const targetId = isEditMode ? id : savedBoard?.id;
-
-        if (targetId) {
-          // targetId가 유효하면 해당 상세 페이지로 이동합니다.
-          navigate(`/board/${targetId}`);
-        } else {
-          // targetId를 받지 못한 경우(서버 응답 문제 등), 목록 페이지로 안전하게 이동합니다.
-          console.warn(
-            "새 게시글의 ID를 응답으로 받지 못했습니다. 목록 페이지로 이동합니다."
-          );
-          navigate("/");
-        }
-      })
-      .catch((error) => {
-        console.error("Error submitting form:", error);
-        alert(`게시글 ${isEditMode ? "수정" : "등록"}에 실패했습니다.`);
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(board),
       });
+
+      if (!response.ok) {
+        throw new Error(
+          `데이터 ${isEditMode ? "수정" : "저장"}에 실패했습니다.`
+        );
+      }
+
+      const savedBoard = isEditMode ? { id: id } : await response.json();
+
+      alert(`게시글이 성공적으로 ${isEditMode ? "수정" : "등록"}되었습니다.`);
+
+      const targetId = savedBoard?.id;
+
+      if (targetId) {
+        navigate(`/board/${targetId}`);
+        // ======================= 수정된 부분 시작 =======================
+      } else if (!isEditMode) {
+        // 수정 모드가 아니고, ID를 받지 못한 경우 (API 응답 형식이 다를 수 있음)
+        // 안전하게 목록 페이지로 이동합니다.
+        console.warn(
+          "새 게시글의 ID를 응답으로 받지 못했습니다. 목록 페이지로 이동합니다."
+        );
+        navigate("/boards");
+      } else {
+        // 수정 모드에서는 응답에 ID가 없을 수 있으므로 현재 ID를 사용합니다.
+        navigate(`/board/${id}`);
+      }
+      // ======================= 수정된 부분 끝 =========================
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
   };
 
   return (
-    <div className="card shadow-sm">
+    <div className="card">
+      <div className="card-header">
+        {isEditMode ? "게시글 수정" : "새 글 작성"}
+      </div>
       <div className="card-body">
-        <h1 className="card-title h3 mb-4">
-          {isEditMode ? "게시글 수정" : "새 게시글 작성"}
-        </h1>
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="author" className="form-label">
-              작성자
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="author"
-              name="author"
-              value={form.author}
-              onChange={handleChange}
-              required
-              disabled={isEditMode}
-            />
-          </div>
           <div className="mb-3">
             <label htmlFor="title" className="form-label">
               제목
@@ -100,7 +100,7 @@ export default function BoardForm() {
               className="form-control"
               id="title"
               name="title"
-              value={form.title}
+              value={board.title}
               onChange={handleChange}
               required
             />
@@ -114,15 +114,30 @@ export default function BoardForm() {
               id="content"
               name="content"
               rows="10"
-              value={form.content}
+              value={board.content}
               onChange={handleChange}
               required
             ></textarea>
           </div>
-          <div className="d-flex justify-content-end">
+          <div className="mb-3">
+            <label htmlFor="author" className="form-label">
+              작성자
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="author"
+              name="author"
+              value={board.author}
+              onChange={handleChange}
+              required
+              disabled={isEditMode}
+            />
+          </div>
+          <div className="text-end">
             <button
               type="button"
-              onClick={() => navigate(isEditMode ? `/board/${id}` : "/")}
+              onClick={() => navigate(-1)}
               className="btn btn-secondary me-2"
             >
               취소
