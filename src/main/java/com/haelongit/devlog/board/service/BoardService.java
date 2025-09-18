@@ -21,21 +21,20 @@ public class BoardService {
 
     // Create
     @Transactional
-    public Board save(BoardSaveRequestDto requestDto) {
-//        return boardRepository.save(requestDto.toEntity()).getId();
-        return boardRepository.save(requestDto.toEntity());
+    public Board save(BoardSaveRequestDto requestDto, String authorUsername) {
+        // 수정된 DTO의 toEntity 메서드를 사용하여 author 정보를 주입합니다.
+        return boardRepository.save(requestDto.toEntity(authorUsername));
     }
 
-    // Read1 - findAll
+    // Read1 - findAll (변경 없음)
     @Transactional(readOnly = true)
     public List<BoardResponseDto> findAll() {
-//        return boardRepository.findAll();
         return boardRepository.findAll().stream()
                 .map(BoardResponseDto::new)
                 .collect(Collectors.toList());
     }
 
-    // Read2 - findById
+    // Read2 - findById (변경 없음)
     @Transactional(readOnly = true)
     public BoardResponseDto findById(Long id) {
         Board board = boardRepository.findById(id)
@@ -45,28 +44,28 @@ public class BoardService {
 
     // Update
     @Transactional
-    public void update(Long id, BoardUpdateRequestDto requestDto) {
-        Board board = boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id=" + id));
+    public void update(Long id, BoardUpdateRequestDto requestDto, String authorUsername) {
+        // 게시글을 찾으면서 소유권도 함께 확인합니다.
+        Board board = findBoardAndCheckOwnership(id, authorUsername);
         board.update(requestDto.getTitle(), requestDto.getContent());
-//        return id;
     }
 
     // Delete
     @Transactional
-    public void delete(Long id) {
-        Board board = boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id=" + id));
+    public void delete(Long id, String authorUsername) {
+        // 게시글을 찾으면서 소유권도 함께 확인합니다.
+        Board board = findBoardAndCheckOwnership(id, authorUsername);
         boardRepository.delete(board);
     }
 
-    /**
-     * 애플리케이션 시작 시 테스트용 데이터 삽입
-     */
-//    @PostConstruct
-//    public void init() {
-//        boardRepository.save(new Board("첫 번째 게시글", "이것은 첫 번째 게시글의 내용입니다.", "작성자A"));
-//        boardRepository.save(new Board("두 번째 게시글", "두 번째 게시글의 흥미로운 이야기", "작성자B"));
-//        boardRepository.save(new Board("세 번째 게시글", "세 번째 게시글에 대한 안내", "작성자C"));
-//    }
+    // 소유권 확인을 위한 private 헬퍼 메서드
+    private Board findBoardAndCheckOwnership(Long id, String username) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id=" + id));
+
+        if (!board.getAuthor().equals(username)) {
+            throw new IllegalArgumentException("게시글에 대한 권한이 없습니다.");
+        }
+        return board;
+    }
 }
