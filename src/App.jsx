@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   Routes,
   Route,
@@ -9,21 +8,17 @@ import {
   useNavigate,
   Link,
 } from "react-router-dom";
-
 import { useAuth } from "./context/AuthContext.jsx";
-
 import BoardList from "./components/BoardList.jsx";
-
 import BoardDetail from "./components/BoardDetail.jsx";
-
 import BoardForm from "./components/BoardForm.jsx";
-
 import LoginPage from "./components/LoginPage.jsx";
-
 import RegisterPage from "./components/RegisterPage.jsx"; // RegisterPage import 추가
+import SubscriptionPage from "./components/SubscriptionPage.jsx"; // SubscriptionPage import
 
 // 로그인한 사용자만 접근 가능한 경로를 보호하는 컴포넌트
 
+// 1. 기존 ProtectedRoute는 로그인 여부만 확인 (변경 없음)
 function ProtectedRoute() {
   const { isLoggedIn } = useAuth();
 
@@ -33,6 +28,22 @@ function ProtectedRoute() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  return <Outlet />;
+}
+
+// 2. 유료 구독자만 접근 가능한 경로를 보호하는 컴포넌트 (새로 추가)
+function PaidUserRoute() {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // user 객체에 paidUntil 정보가 있고, 만료일이 지나지 않았는지 확인
+  const isSubscribed =
+    user?.paidUntil && new Date(user.paidUntil) >= new Date();
+
+  if (!isSubscribed) {
+    // 구독하지 않은 사용자는 구독 페이지로 리다이렉트
+    return <Navigate to="/subscribe" state={{ from: location }} replace />;
+  }
   return <Outlet />;
 }
 
@@ -80,20 +91,27 @@ export default function App() {
 
   return (
     <Routes>
+      {/* 공개 경로 */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* 3. 로그인한 사용자만 접근 가능한 경로 그룹 */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          <Route path="/boards" element={<BoardList />} />
+        {/* 구독 페이지는 로그인만 하면 접근 가능 */}
+        <Route path="/subscribe" element={<SubscriptionPage />} />
 
-          <Route path="/board/:id" element={<BoardDetail />} />
-
-          <Route path="/write" element={<BoardForm />} />
-
-          <Route path="/edit/:id" element={<BoardForm />} />
+        {/* 4. 유료 구독자만 접근 가능한 경로 그룹 */}
+        <Route element={<PaidUserRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/boards" element={<BoardList />} />
+            <Route path="/board/:id" element={<BoardDetail />} />
+            <Route path="/write" element={<BoardForm />} />
+            <Route path="/edit/:id" element={<BoardForm />} />
+          </Route>
         </Route>
       </Route>
+
       <Route
         path="*"
         element={<Navigate to={isLoggedIn ? "/boards" : "/login"} replace />}
