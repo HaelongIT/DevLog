@@ -20,6 +20,8 @@ import BoardForm from "./components/BoardForm.jsx";
 
 import LoginPage from "./components/LoginPage.jsx";
 
+import RegisterPage from "./components/RegisterPage.jsx"; // RegisterPage import 추가
+
 // 로그인한 사용자만 접근 가능한 경로를 보호하는 컴포넌트
 
 function ProtectedRoute() {
@@ -37,13 +39,13 @@ function ProtectedRoute() {
 // 게시판 페이지들의 공통 레이아웃 (헤더, 로그아웃 버튼 포함)
 
 function Layout() {
-  const { logout } = useAuth();
-
+  // logout과 함께 user 정보도 가져옵니다.
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-
+  const handleLogout = async () => {
+    // AuthContext의 logout은 이제 비동기 함수입니다.
+    await logout();
     navigate("/login");
   };
 
@@ -56,11 +58,16 @@ function Layout() {
           </h1>
         </Link>
 
-        <button onClick={handleLogout} className="btn btn-outline-secondary">
-          로그아웃
-        </button>
+        {/* 사용자 정보와 로그아웃 버튼을 함께 표시 */}
+        <div className="d-flex align-items-center">
+          <span className="me-3">
+            <strong>{user?.username}</strong>님 환영합니다.
+          </span>
+          <button onClick={handleLogout} className="btn btn-outline-secondary">
+            로그아웃
+          </button>
+        </div>
       </header>
-
       <main>
         <Outlet />
       </main>
@@ -74,9 +81,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
-
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/boards" element={<BoardList />} />
@@ -88,7 +94,6 @@ export default function App() {
           <Route path="/edit/:id" element={<BoardForm />} />
         </Route>
       </Route>
-
       <Route
         path="*"
         element={<Navigate to={isLoggedIn ? "/boards" : "/login"} replace />}

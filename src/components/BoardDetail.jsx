@@ -1,5 +1,7 @@
+// src/components/BoardDetail.jsx (수정 후)
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import apiClient from "../api"; // apiClient import
 
 export default function BoardDetail() {
   const { id } = useParams();
@@ -9,13 +11,12 @@ export default function BoardDetail() {
   useEffect(() => {
     const fetchBoard = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/boards/${id}`);
-        if (!response.ok) throw new Error("게시글을 찾을 수 없습니다.");
-        const data = await response.json();
-        setBoard(data);
+        // fetch -> apiClient.get으로 변경
+        const response = await apiClient.get(`/api/boards/${id}`);
+        setBoard(response.data);
       } catch (error) {
         console.error(error);
-        alert(error.message);
+        alert("게시글을 불러올 수 없습니다.");
         navigate("/boards");
       }
     };
@@ -25,15 +26,13 @@ export default function BoardDetail() {
   const handleDelete = async () => {
     if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       try {
-        const response = await fetch(`http://localhost:8080/api/boards/${id}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) throw new Error("삭제에 실패했습니다.");
+        // fetch -> apiClient.delete로 변경
+        await apiClient.delete(`/api/boards/${id}`);
         alert("삭제되었습니다.");
         navigate("/boards");
       } catch (error) {
         console.error(error);
-        alert(error.message);
+        alert("삭제에 실패했습니다.");
       }
     }
   };

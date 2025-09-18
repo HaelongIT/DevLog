@@ -1,5 +1,7 @@
+// src/components/BoardList.jsx (수정 후)
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import apiClient from "../api"; // apiClient import
 
 export default function BoardList() {
   const [boards, setBoards] = useState([]);
@@ -8,10 +10,9 @@ export default function BoardList() {
   useEffect(() => {
     const fetchBoards = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/boards");
-        if (!response.ok) throw new Error("데이터를 불러오는데 실패했습니다.");
-        const data = await response.json();
-        setBoards(data);
+        // fetch -> apiClient.get으로 변경
+        const response = await apiClient.get("/api/boards");
+        setBoards(response.data);
       } catch (error) {
         console.error("게시글 목록 로딩 실패:", error);
       }

@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react"; // useEffect 추가
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
+import apiClient from "../api"; // API 클라이언트 import
+import { useAuth } from "../context/AuthContext"; // useAuth 추가
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, isLoggedIn } = useAuth(); // isLoggedIn 가져오기
+  const { isLoggedIn } = useAuth(); // isLoggedIn 가져오기
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // 로딩 상태 추가
-
-  const from = location.state?.from?.pathname || "/boards";
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -19,23 +17,20 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, navigate]);
 
-  // API 통신을 위해 async/await 추가
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true); // 로딩 시작
+    setLoading(true);
 
     try {
-      const success = await login(username, password);
-      if (success) {
-        navigate(from, { replace: true });
-      } else {
-        setError("아이디 또는 비밀번호가 올바르지 않습니다.");
-      }
+      await apiClient.post("/api/user/register", { username, password });
+      alert("회원가입에 성공했습니다! 로그인 페이지로 이동합니다.");
+      navigate("/login");
     } catch (err) {
-      setError("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+      // 서버에서 보낸 에러 메시지를 표시
+      setError(err.response?.data || "회원가입 중 오류가 발생했습니다.");
     } finally {
-      setLoading(false); // 로딩 종료
+      setLoading(false);
     }
   };
 
@@ -43,8 +38,9 @@ export default function LoginPage() {
     <div className="container vh-100 d-flex justify-content-center align-items-center">
       <div className="card shadow-sm" style={{ width: "400px" }}>
         <div className="card-body p-5">
-          <h1 className="card-title text-center mb-4">로그인</h1>
-          <form onSubmit={handleLogin}>
+          <h1 className="card-title text-center mb-4">회원가입</h1>
+          <form onSubmit={handleRegister}>
+            {/* 아이디, 비밀번호 입력 필드는 LoginPage.jsx와 동일 */}
             <div className="mb-3">
               <label htmlFor="username" className="form-label">
                 아이디
@@ -56,7 +52,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                disabled={loading} // 로딩 중일 때 비활성화
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -70,38 +66,28 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={loading} // 로딩 중일 때 비활성화
+                disabled={loading}
               />
             </div>
+
             {error && (
               <div className="alert alert-danger p-2" role="alert">
                 {error}
               </div>
             )}
+
             <div className="d-grid">
               <button
                 type="submit"
                 className="btn btn-primary mt-3"
-                disabled={loading} // 로딩 중일 때 비활성화
+                disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <span
-                      className="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                    <span className="ms-2">로그인 중...</span>
-                  </>
-                ) : (
-                  "로그인"
-                )}
+                {loading ? "가입 처리 중..." : "회원가입"}
               </button>
             </div>
           </form>
-
           <div className="text-center mt-4">
-            <Link to="/register">아직 계정이 없으신가요? 회원가입</Link>
+            <Link to="/login">이미 계정이 있으신가요? 로그인</Link>
           </div>
         </div>
       </div>

@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios"; // axios import
+
+// AuthContext와 동일한 axios 인스턴스 설정
+const apiClient = axios.create({
+  baseURL: "http://localhost:8080",
+  withCredentials: true, // 세션 유지를 위한 필수 설정
+});
 
 export default function BoardForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  const [board, setBoard] = useState({ title: "", content: "", author: "" });
+
+  // author 필드를 초기 상태에서 제거합니다.
+  const [board, setBoard] = useState({ title: "", content: "" });
+  const [originalAuthor, setOriginalAuthor] = useState(""); // 수정 모드에서 작성자를 표시하기 위함
 
   useEffect(() => {
     if (isEditMode) {
       const fetchBoard = async () => {
         try {
-          const response = await fetch(
-            `http://localhost:8080/api/boards/${id}`
-          );
-          if (!response.ok)
-            throw new Error("게시글 정보를 가져오는데 실패했습니다.");
-          const data = await response.json();
-          setBoard({
-            title: data.title,
-            content: data.content,
-            author: data.author,
-          });
+          const response = await apiClient.get(`/api/boards/${id}`);
+          const { title, content, author } = response.data;
+          setBoard({ title, content });
+          setOriginalAuthor(author); // 기존 작성자 정보 저장
         } catch (error) {
-          console.error(error);
-          alert(error.message);
+          console.error("게시글 정보를 가져오는데 실패했습니다.", error);
+          alert("게시글 정보를 가져올 수 없습니다.");
           navigate("/boards");
         }
       };
@@ -39,48 +42,33 @@ export default function BoardForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isEditMode
-      ? `http://localhost:8080/api/boards/${id}`
-      : "http://localhost:8080/api/boards";
-    const method = isEditMode ? "PUT" : "POST";
+    const url = isEditMode ? `/api/boards/${id}` : "/api/boards";
+    const method = isEditMode ? "put" : "post";
+
+    // 서버에는 제목과 내용만 보냅니다. 작성자는 서버가 세션에서 파악합니다.
+    const payload = { title: board.title, content: board.content };
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(board),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `데이터 ${isEditMode ? "수정" : "저장"}에 실패했습니다.`
-        );
-      }
-
-      const savedBoard = isEditMode ? { id: id } : await response.json();
-
+      const response = await apiClient[method](url, payload);
       alert(`게시글이 성공적으로 ${isEditMode ? "수정" : "등록"}되었습니다.`);
 
-      const targetId = savedBoard?.id;
-
-      if (targetId) {
-        navigate(`/board/${targetId}`);
-        // ======================= 수정된 부분 시작 =======================
-      } else if (!isEditMode) {
-        // 수정 모드가 아니고, ID를 받지 못한 경우 (API 응답 형식이 다를 수 있음)
-        // 안전하게 목록 페이지로 이동합니다.
-        console.warn(
-          "새 게시글의 ID를 응답으로 받지 못했습니다. 목록 페이지로 이동합니다."
-        );
-        navigate("/boards");
-      } else {
-        // 수정 모드에서는 응답에 ID가 없을 수 있으므로 현재 ID를 사용합니다.
+      // ===== 로직 수정 시작 =====
+      if (isEditMode) {
+        // 수정 모드일 경우, useParams에서 가져온 id를 사용해 상세 페이지로 이동
         navigate(`/board/${id}`);
+      } else {
+        // 생성 모드일 경우, 서버 응답에서 새로운 id를 가져와 상세 페이지로 이동
+        const newBoardId = response.data.id;
+        navigate(`/board/${newBoardId}`);
       }
-      // ======================= 수정된 부분 끝 =========================
+      // ===== 로직 수정 끝 =====
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      if (error.response?.status === 403) {
+        alert("이 게시글을 수정할 권한이 없습니다.");
+      } else {
+        alert(`데이터 ${isEditMode ? "수정" : "저장"}에 실패했습니다.`);
+      }
     }
   };
 
@@ -119,21 +107,20 @@ export default function BoardForm() {
               required
             ></textarea>
           </div>
-          <div className="mb-3">
-            <label htmlFor="author" className="form-label">
-              작성자
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="author"
-              name="author"
-              value={board.author}
-              onChange={handleChange}
-              required
-              disabled={isEditMode}
-            />
-          </div>
+
+          {/* 수정 모드일 때만 작성자 정보를 표시합니다 (수정 불가) */}
+          {isEditMode && (
+            <div className="mb-3">
+              <label className="form-label">작성자</label>
+              <input
+                type="text"
+                className="form-control"
+                value={originalAuthor}
+                disabled
+              />
+            </div>
+          )}
+
           <div className="text-end">
             <button
               type="button"
