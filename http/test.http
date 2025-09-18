@@ -1,0 +1,18 @@
+### PortOne Webhook Test
+POST http://localhost:8080/api/payment/portone
+Content-Type: application/json
+
+{
+    "userId": 1,
+    "orderId": 123456789,
+    "imp_uid": "imp_9876543210",
+    "pay_method": "card",
+    "merchant_uid": "order_20250918_abcdef",
+    "paid_amount": 100,
+    "pg_provider": "html5_inicis",
+    "pg_type": "card",
+    "pg_tid": "tid_123456789",
+    "status": "paid",
+    "card_name": "신한카드",
+    "card_number": "1234-****-****-5678"
+}

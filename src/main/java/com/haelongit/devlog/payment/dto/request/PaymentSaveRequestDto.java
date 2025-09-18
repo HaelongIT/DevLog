@@ -1,4 +1,4 @@
-package com.haelongit.devlog.payment.dto;
+package com.haelongit.devlog.payment.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

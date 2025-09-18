@@ -31,13 +31,18 @@ public class SecurityConfig {
                 // 1. CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 2. CSRF 비활성화 (세션 방식에서는 고려해야 하지만, 여기서는 편의상 비활성화)
+                // 2. CSRF 비활성화
                 .csrf(csrf -> csrf.disable())
 
                 // 3. 요청별 접근 제어 설정
                 .authorizeHttpRequests(auth -> auth
                         // '/api/user/register', '/api/user/login' 은 누구나 접근 가능
                         .requestMatchers("/api/user/register", "/api/user/login").permitAll()
+
+                        // ===== 이 라인 추가 =====
+                        // '/api/payment/portone' (웹훅) 경로는 누구나 접근 가능하도록 허용
+                        .requestMatchers("/api/payment/portone").permitAll()
+
                         // 나머지 모든 '/api/**' 요청은 인증된 사용자만 접근 가능
                         .requestMatchers("/api/**").authenticated()
                         // 그 외 모든 요청은 허용 (React 라우팅을 위함)
@@ -46,14 +51,11 @@ public class SecurityConfig {
 
                 // 4. 로그인 설정
                 .formLogin(formLogin -> formLogin
-                        // 로그인 API 경로 설정
                         .loginProcessingUrl("/api/user/login")
-                        // 로그인 성공 시 처리
                         .successHandler((request, response, authentication) -> {
                             response.setStatus(HttpStatus.OK.value());
                             response.getWriter().write("Login successful");
                         })
-                        // 로그인 실패 시 처리
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
                             response.getWriter().write("Login failed");
@@ -62,14 +64,11 @@ public class SecurityConfig {
 
                 // 5. 로그아웃 설정
                 .logout(logout -> logout
-                        // 로그아웃 API 경로 설정
                         .logoutUrl("/api/user/logout")
-                        // 로그아웃 성공 시 처리
                         .logoutSuccessHandler((request, response, authentication) -> {
                             response.setStatus(HttpStatus.OK.value());
                             response.getWriter().write("Logout successful");
                         })
-                        // 세션 무효화 및 쿠키 삭제
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 )
@@ -90,7 +89,6 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        // 쿠키를 포함한 요청을 허용하기 위한 설정
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

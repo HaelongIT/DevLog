@@ -1,16 +1,15 @@
 package com.haelongit.devlog.payment.entity;
 
-import com.haelongit.devlog.payment.dto.PaymentSaveRequestDto;
+import com.haelongit.devlog.payment.dto.request.PaymentSaveRequestDto;
+import com.haelongit.devlog.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,8 +23,10 @@ public class Payment {
     @Column(name = "partner_id")
     private Long partnerId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    // ===== 1. userId 필드를 User 객체로 변경 =====
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "order_id", nullable = false)
     private Long orderId;
@@ -81,10 +82,11 @@ public class Payment {
         updatedAt = LocalDateTime.now();
     }
 
-    public static Payment of(PaymentSaveRequestDto paymentReq) {
+    // ===== 2. of() 정적 팩토리 메서드 수정 =====
+    public static Payment of(PaymentSaveRequestDto paymentReq, User user) { // User 객체를 파라미터로 받도록 변경
         return Payment.builder()
                 .partnerId(paymentReq.getPartnerId())
-                .userId(paymentReq.getUserId())
+                .user(user) // userId 대신 user 객체를 직접 설정
                 .orderId(paymentReq.getOrderId())
                 .impUid(paymentReq.getImpUid())
                 .paymentMethod(paymentReq.getPayMethod())
