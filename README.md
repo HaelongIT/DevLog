@@ -1,12 +1,63 @@
-# React + Vite
+# 🎨 Devlog: 구독 기반 유료 커뮤니티 프론트엔드
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## ✨ 프로젝트 소개
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**React 기반의 Devlog 프론트엔드 애플리케이션은 사용자 인증 및 구독 상태에 따라 동적으로 UI를 구성하고 기능을 제공하는 유료 커뮤니티 플랫폼입니다.**
 
-## Expanding the ESLint configuration
+직관적인 인터페이스를 통해 사용자는 손쉽게 게시글과 댓글을 관리하고, 안전하고 편리하게 구독 서비스를 이용하며, 콘텐츠를 소비하고 소통할 수 있습니다. 백엔드와의 견고한 연동을 통해 안정적이고 일관된 사용자 경험을 제공하는 데 중점을 두었습니다.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 💡 주요 기술 스택
+
+### Frontend
+
+- **React 18**
+- **JavaScript (ES6+)**
+- **HTML5 / CSS3**
+- **React Router DOM** (Client-side Routing)
+- **React Context API** (Global State Management)
+- **Axios** (HTTP Client)
+- **PortOne (아임포트) Client SDK** (Payment Integration)
+- (UI/Component Library: 예: `styled-components`, `Tailwind CSS`, `MUI` 등 사용한 라이브러리 명시)
+
+---
+
+## 🎯 주요 기능 및 UX/UI 구현 특징
+
+### 1. 🔑 사용자 인증 및 구독 상태 기반 접근 제어
+
+- **직관적인 로그인/회원가입:** 백엔드 API와 연동하여 사용자가 쉽고 빠르게 서비스에 접근할 수 있도록 UI/UX 구현. 로그인/회원가입 시 사용자에게 명확한 피드백 제공.
+- **동적인 UI 제어:** `AuthContext`와 같은 전역 상태 관리를 통해 사용자의 로그인 여부 및 **`paidUntil` (구독 만료일) 정보를 실시간으로 확인**.
+  - **미구독자 UI 제한:** 구독이 필요한 페이지(예: 유료 게시판) 접근 시 구독 안내 페이지로 자동 리디렉션하거나, 유료 기능 관련 버튼 및 입력 필드를 비활성화/숨김 처리하여 명확하게 구독 필요성 제시.
+  - **구독 만료 알림:** 구독 만료일이 임박했거나 만료된 사용자에게 시각적으로 알림을 제공하여 구독 갱신을 유도.
+- **콘텐츠 소유권 시각화:** 게시글/댓글 작성자와 현재 로그인한 사용자 ID를 비교하여, **본인이 작성한 콘텐츠에만 수정/삭제 버튼을 활성화**하는 등 백엔드 권한 로직에 맞춰 UI 동적 제어.
+
+### 2. 💲 안전하고 편리한 구독 결제 경험 제공
+
+- **PortOne (아임포트) 연동:** 아임포트 클라이언트 SDK를 직접 연동하여 **사용자 친화적인 결제 창**을 제공.
+- **결제 흐름 안내:** 결제 준비부터 완료까지의 단계를 사용자에게 명확하게 안내하고, 결제 성공/실패 시 백엔드 응답에 따른 피드백 UI를 제공.
+- **구독 상태 즉시 반영:** 결제 성공 후 백엔드로부터 업데이트된 사용자 정보를 받아와, 프론트엔드의 `AuthContext`에 구독 만료일(`paidUntil`)을 즉시 갱신하여 UI에 반영.
+
+### 3. 📝 유료 커뮤니티 게시글 및 댓글 기능
+
+- **게시글 CRUD:** 게시글 목록 조회, 상세 페이지, 작성/수정 폼 구현. 백엔드 API와의 효율적인 통신을 통해 게시글 데이터를 관리하고 화면에 표시.
+- **댓글 CRUD:** 게시글 상세 페이지 내에 댓글 목록 조회, 작성, 수정, 삭제 기능을 통합 구현. 사용자 간의 활발한 소통을 위한 인터페이스 제공.
+- **직관적인 인터랙션:** 게시글 및 댓글 작성 시 로딩 스피너, 성공/실패 메시지 등 사용자 경험을 고려한 피드백 제공.
+
+### 4. 🌐 백엔드와의 견고한 연동
+
+- **Axios (HTTP Client):** 백엔드 RESTful API와의 비동기 통신을 담당. 인터셉터를 활용하여 에러 처리 및 요청 전 처리 로직 구현 가능.
+- **세션 기반 인증:** 로그인 시 백엔드에서 발급하는 `JSESSIONID` 쿠키를 자동으로 관리하며 인증된 요청을 전송.
+- **오류 처리:** 백엔드에서 반환되는 HTTP 상태 코드 (예: 401, 403, 404) 및 에러 메시지를 파싱하여 사용자에게 이해하기 쉬운 형태로 표시.
+
+---
+
+## 🔗 관련 링크
+
+- **GitHub Repository (Backend):** [https://github.com/HaelongIT/DevLog/tree/main?tab=readme-ov-file]
+- **Notion Portfolio:** [https://www.notion.so/Son-Yongjae-255d167dbc3080c38e6bfc9fb1f0e9ad]
+
+---
