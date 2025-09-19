@@ -20,7 +20,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "partner_id")
+    @Column(name = "partner_id", nullable = false)
     private Long partnerId;
 
     // ===== 1. userId 필드를 User 객체로 변경 =====

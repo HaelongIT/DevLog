@@ -2,6 +2,7 @@ package com.haelongit.devlog.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -39,9 +40,17 @@ public class SecurityConfig {
                         // '/api/user/register', '/api/user/login' 은 누구나 접근 가능
                         .requestMatchers("/api/user/register", "/api/user/login").permitAll()
 
-                        // ===== 이 라인 추가 =====
                         // '/api/payment/portone' (웹훅) 경로는 누구나 접근 가능하도록 허용
                         .requestMatchers("/api/payment/portone").permitAll()
+
+                        // ===== 아래 댓글 API 관련 라인 추가 및 수정 =====
+                        // GET /api/boards/{boardId}/comments : 댓글 조회는 누구나 접근 가능
+                        .requestMatchers(HttpMethod.GET, "/api/boards/{boardId}/comments").permitAll()
+                        // POST, PUT, DELETE /api/boards/{boardId}/comments/** : 댓글 생성, 수정, 삭제는 인증된 사용자만 접근 가능
+                        .requestMatchers(HttpMethod.POST, "/api/boards/{boardId}/comments").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/boards/{boardId}/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/boards/{boardId}/comments/*").authenticated()
+                        // ===== 추가 및 수정 끝 =====
 
                         // 나머지 모든 '/api/**' 요청은 인증된 사용자만 접근 가능
                         .requestMatchers("/api/**").authenticated()

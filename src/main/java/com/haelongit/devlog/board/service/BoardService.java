@@ -4,8 +4,7 @@ import com.haelongit.devlog.board.dto.request.BoardSaveRequestDto;
 import com.haelongit.devlog.board.dto.request.BoardUpdateRequestDto;
 import com.haelongit.devlog.board.dto.response.BoardResponseDto;
 import com.haelongit.devlog.board.entity.Board;
-import com.haelongit.devlog.board.repository.BoardRepsitory;
-import jakarta.annotation.PostConstruct;
+import com.haelongit.devlog.board.repository.BoardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BoardService {
 
-    private final BoardRepsitory boardRepository;
+    private final BoardRepository boardRepository;
 
     // Create
     @Transactional

@@ -70,6 +70,8 @@ public class SettlementScheduledTasks {
         List<Payment> paymentList = paymentRepository.findByPaymentDateBetweenAndStatus(startDate, endDate, PAYMENT_COMPLETED);
         // partner_id를 기준으로 group by
         return paymentList.stream()
+                // 널 포인터 예외 방지를 위해 partnerId가 null이 아닌 Payment만 필터링
+                .filter(payment -> payment.getPartnerId() != null) // <<< 이 라인을 추가합니다.
                 .collect(Collectors.groupingBy(
                         Payment::getPartnerId,
                         Collectors.reducing(

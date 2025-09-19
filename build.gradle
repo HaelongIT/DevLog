@@ -48,6 +48,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security 의존성 추가
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 의존성 추가
+
+    // 유효성 검사(Validation) 관련 의존성 추가
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {

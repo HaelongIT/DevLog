@@ -7,11 +7,11 @@ import com.haelongit.devlog.payment.util.PaymentClient;
 import com.haelongit.devlog.user.entity.User;
 import com.haelongit.devlog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,7 +29,7 @@ public class PaymentService {
     @Transactional
     public Payment preparePayment(Long userId, BigDecimal amount) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found for ID: " + userId));
 
         // 고유한 주문번호(merchant_uid) 생성
         String merchantUid = "order_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8);
@@ -41,13 +41,15 @@ public class PaymentService {
                 .merchantUid(merchantUid)
                 // 임시 주문 ID, 실제로는 Order 테이블과 연관관계 필요
                 .orderId(System.currentTimeMillis())
+                .paymentDate(LocalDateTime.now()) // paymentDate 필드 추가
+                .partnerId(user.getId()) // <<< 여기에 partnerId를 user의 ID로 설정합니다.
                 .build();
 
         return paymentRepository.save(payment);
     }
 
     /**
-     * 웹훅 수신 후 처리 로직 (핵심 변경점)
+     * 웹훅 수신 후 처리 로직
      */
     @Transactional
     public void processWebhook(PaymentSaveRequestDto webhookDto) {
@@ -74,14 +76,14 @@ public class PaymentService {
     }
 
     /**
-     * 모든 결제 내역 조회 (변경 없음)
+     * 모든 결제 내역 조회
      */
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
     }
 
     /**
-     * 결제 취소 (로직 보강)
+     * 결제 취소
      */
     @Transactional
     public void canclePayment(String uid) {
